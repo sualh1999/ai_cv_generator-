@@ -2,6 +2,8 @@ import fitz  # PyMuPDF
 from PIL import Image
 import logging
 
+logging.basicConfig(level=logging.WARNING)
+
 def create_cv_pdf(output_path, data, template_path, face_image_path, full_body_image_path, passport_image_path):
     """
     Generates a CV in PDF format by filling a template with provided data and images.

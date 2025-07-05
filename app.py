@@ -9,7 +9,6 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 from pdf_utils import create_cv_pdf
 
-load_dotenv()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,7 +18,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
