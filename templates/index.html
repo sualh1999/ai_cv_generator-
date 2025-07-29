@@ -41,7 +41,7 @@
 }
 </script>
 </head>
-<body class="min-h-screen w-full p-4 bg-[var(--color-background)]">
+<body class="min-h-screen w-full p-4 bg-[var(--color-background)]" data-cv-data='{{ cv_data | tojson }}' data-download-url='{{ download_url | tojson }}'>
     <div class="w-full max-w-6xl mx-auto">
         <!-- Header -->
         <header class="flex justify-between items-center mb-6 py-4">
@@ -71,6 +71,7 @@
                     <!-- Right Pane - The Form -->
                     <div class="md:col-span-8 p-8">
                         <form id="cvForm" action="/generate" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="regenerate" value="{{ 'true' if edit_mode else 'false' }}">
                              <!-- Error Display -->
                             <div id="error-container" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
                                 <strong class="font-bold">Generation Error!</strong>
@@ -82,14 +83,14 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label for="contactPhone" class="block text-sm font-medium text-[var(--color-text)] mb-1">Contact Phone (Optional)</label>
-                                        <input type="text" name="contactPhone" id="contactPhone" class="w-full px-3 py-2 input-style border rounded-md" value="251987654321">
+                                        <input type="text" name="contactPhone" id="contactPhone" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.get('contactPhone', '251987654321') }}">
                                     </div>
                                     <div>
                                         <label for="religion" class="block text-sm font-medium text-[var(--color-text)] mb-1">Religion (Optional)</label>
                                         <select name="religion" id="religion" class="w-full px-3 py-2 input-style border rounded-md">
                                             <option value="">-- Select --</option>
-                                            <option value="Muslim" selected>Muslim</option>
-                                            <option value="Non Muslim">Non Muslim</option>
+                                            <option value="Muslim" {% if cv_data.get('religion', 'Muslim') == 'Muslim' %}selected{% endif %}>Muslim</option>
+                                            <option value="Non Muslim" {% if cv_data.get('religion') == 'Non Muslim' %}selected{% endif %}>Non Muslim</option>
                                         </select>
                                     </div>
                                 </div>
@@ -112,6 +113,17 @@
 
                             <fieldset>
                                 <legend class="text-xl font-semibold text-[var(--color-heading)] mb-4 border-b border-[var(--color-card-border)] w-full pb-2">Image Uploads *</legend>
+                                <div class="mb-4">
+                                    <label for="extractionMethod" class="block text-sm font-medium text-[var(--color-text)] mb-1">Select OCR Method</label>
+                                    <select name="extractionMethod" id="extractionMethod" class="w-full px-3 py-2 input-style border rounded-md">
+                                        <option value="ai">Gemini AI</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="local_ocr">Local OCR</option>
+                                        <option value="simple_ocr">Local OCR (Simple)</option>
+                                        <option value="advanced_ocr">Local OCR (Advanced)</option>
+                                        <option value="mrz_ocr">Local OCR (MRZ Focused)</option>
+                                    </select>
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div id="passport-container"></div>
                                     <div id="face-container"></div>
@@ -154,6 +166,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
                         Back to Form
                     </button>
+                     <a id="edit-btn" href="{{ url_for('edit_cv') }}" class="px-6 py-2.5 font-bold rounded-lg text-base transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 flex items-center justify-center gap-2 bg-transparent text-[var(--color-text)] hover:bg-gray-500/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                        Edit CV
+                    </a>
                     <a id="download-btn" href="#" download="cv.pdf" class="hidden px-8 py-4 font-bold rounded-lg text-lg transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 flex items-center justify-center gap-3 btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                         Download CV
@@ -176,6 +192,17 @@
             Internal tool for agency staff.
         </footer>
     </div>
+
+    <!-- Popup Message -->
+    <div id="popup-message" class="hidden fixed top-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg cursor-pointer transition-transform transform translate-x-full duration-300 ease-out">
+        <button id="close-popup-btn" class="absolute top-1 right-2 text-white text-2xl font-bold">&times;</button>
+        <p id="popup-text" class="pr-4"></p>
+    </div>
+
+    
+
+    
     <script type="module" src="{{ url_for('static', filename='index.js') }}"></script>
+    
 </body>
 </html>

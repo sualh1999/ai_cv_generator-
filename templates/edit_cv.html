@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit CV Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --color-primary: #3b82f6; --color-secondary: #60a5fa; --color-background: #f3f4f6; --color-text: #374151; --color-card-bg: #ffffff; --color-card-border: #e5e7eb; --color-input-bg: #f9fafb; --color-input-border: #d1d5db; --color-input-text: #111827; --color-heading: #1f2937;
+        }
+        body {
+            background-color: var(--color-background);
+            color: var(--color-text);
+            transition: background-color 0.5s, color 0.5s;
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        .input-style { background-color: var(--color-input-bg); border-color: var(--color-input-border); color: var(--color-input-text); }
+        .input-style:focus { border-color: var(--color-primary); ring-color: var(--color-primary); }
+        .btn-primary { background-color: var(--color-primary); color: white; }
+        .btn-primary:hover { background-color: var(--color-secondary); }
+    </style>
+</head>
+<body class="min-h-screen w-full p-4 bg-[var(--color-background)]">
+    <div class="w-full max-w-4xl mx-auto bg-[var(--color-card-bg)] rounded-2xl shadow-2xl border border-[var(--color-card-border)] p-8">
+        <h1 class="text-3xl font-bold text-[var(--color-heading)] mb-6">Edit CV Details</h1>
+
+        <form id="editCvForm" action="/generate" method="POST">
+            <input type="hidden" name="regenerate" value="true">
+            <input type="hidden" name="face_image_path" value="{{ cv_data.face_image_path }}">
+            <input type="hidden" name="full_body_image_path" value="{{ cv_data.full_body_image_path }}">
+            <input type="hidden" name="passport_image_path" value="{{ cv_data.passport_image_path }}">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label for="firstName" class="block text-sm font-medium text-[var(--color-text)] mb-1">First Name</label>
+                    <input type="text" name="firstName" id="firstName" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.firstName | default('') }}">
+                </div>
+                <div>
+                    <label for="fatherName" class="block text-sm font-medium text-[var(--color-text)] mb-1">Father's Name</label>
+                    <input type="text" name="fatherName" id="fatherName" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.fatherName | default('') }}">
+                </div>
+                <div>
+                    <label for="grandfatherName" class="block text-sm font-medium text-[var(--color-text)] mb-1">Grandfather's Name</label>
+                    <input type="text" name="grandfatherName" id="grandfatherName" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.grandfatherName | default('') }}">
+                </div>
+                <div>
+                    <label for="passportNo" class="block text-sm font-medium text-[var(--color-text)] mb-1">Passport No</label>
+                    <input type="text" name="passportNo" id="passportNo" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.passportNo | default('') }}">
+                </div>
+                <div>
+                    <label for="nationality" class="block text-sm font-medium text-[var(--color-text)] mb-1">Nationality</label>
+                    <input type="text" name="nationality" id="nationality" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.nationality | default('') }}">
+                </div>
+                <div>
+                    <label for="dob" class="block text-sm font-medium text-[var(--color-text)] mb-1">Date of Birth (DD MMM YY)</label>
+                    <input type="text" name="dob" id="dob" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.dob | default('') }}">
+                </div>
+                <div>
+                    <label for="age" class="block text-sm font-medium text-[var(--color-text)] mb-1">Age</label>
+                    <input type="text" name="age" id="age" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.age | default('') }}">
+                </div>
+                <div>
+                    <label for="sex" class="block text-sm font-medium text-[var(--color-text)] mb-1">Sex</label>
+                    <select name="sex" id="sex" class="w-full px-3 py-2 input-style border rounded-md">
+                        <option value="M" {% if cv_data.sex == 'M' %}selected{% endif %}>M</option>
+                        <option value="F" {% if cv_data.sex == 'F' %}selected{% endif %}>F</option>
+                        <option value="NOT_FOUND" {% if cv_data.sex == 'NOT_FOUND' %}selected{% endif %}>NOT_FOUND</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="pob" class="block text-sm font-medium text-[var(--color-text)] mb-1">Place of Birth</label>
+                    <input type="text" name="pob" id="pob" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.pob | default('') }}">
+                </div>
+                <div>
+                    <label for="livingTown" class="block text-sm font-medium text-[var(--color-text)] mb-1">Living Town</label>
+                    <input type="text" name="livingTown" id="livingTown" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.livingTown | default('') }}">
+                </div>
+                <div>
+                    <label for="dateOfIssue" class="block text-sm font-medium text-[var(--color-text)] mb-1">Date of Issue (DD MMM YY)</label>
+                    <input type="text" name="dateOfIssue" id="dateOfIssue" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.dateOfIssue | default('') }}">
+                </div>
+                <div>
+                    <label for="placeOfIssue" class="block text-sm font-medium text-[var(--color-text)] mb-1">Place of Issue</label>
+                    <input type="text" name="placeOfIssue" id="placeOfIssue" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.placeOfIssue | default('') }}">
+                </div>
+                <div>
+                    <label for="dateOfExpiry" class="block text-sm font-medium text-[var(--color-text)] mb-1">Date of Expiry (DD MMM YY)</label>
+                    <input type="text" name="dateOfExpiry" id="dateOfExpiry" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.dateOfExpiry | default('') }}">
+                </div>
+                <div>
+                    <label for="contactPhone" class="block text-sm font-medium text-[var(--color-text)] mb-1">Contact Phone</label>
+                    <input type="text" name="contactPhone" id="contactPhone" class="w-full px-3 py-2 input-style border rounded-md" value="{{ cv_data.contactPhone | default('') }}">
+                </div>
+                <div>
+                    <label for="religion" class="block text-sm font-medium text-[var(--color-text)] mb-1">Religion</label>
+                    <select name="religion" id="religion" class="w-full px-3 py-2 input-style border rounded-md">
+                        <option value="Muslim" {% if cv_data.religion == 'Muslim' %}selected{% endif %}>Muslim</option>
+                        <option value="Non Muslim" {% if cv_data.religion == 'Non Muslim' %}selected{% endif %}>Non Muslim</option>
+                    </select>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-bold text-[var(--color-heading)] mb-4">Experiences</h2>
+            <div id="experience-fields-container" class="space-y-4 mb-6">
+                {% for exp in cv_data.experiences %}
+                <div class="grid grid-cols-12 gap-2 items-center">
+                    <div class="col-span-6">
+                        <input type="text" name="experience_country" placeholder="Country" class="w-full px-3 py-2 text-sm input-style border rounded-md" value="{{ exp.country | default('') }}">
+                    </div>
+                    <div class="col-span-5">
+                        <input type="number" name="experience_period" placeholder="Years" class="w-full px-3 py-2 text-sm input-style border rounded-md" value="{{ exp.period | default('') }}">
+                    </div>
+                    <div class="col-span-1">
+                        <button type="button" class="remove-experience-btn p-1 text-gray-400 hover:text-red-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-experience-btn" class="px-4 py-2 text-sm font-semibold rounded-md flex items-center gap-2 bg-gray-200 text-[var(--color-text)] hover:bg-gray-300 transition-colors mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                Add Experience
+            </button>
+
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="window.history.back();" class="px-6 py-2.5 font-bold rounded-lg text-base transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 flex items-center justify-center gap-2 bg-gray-300 text-gray-800 hover:bg-gray-400">
+                    Cancel
+                </button>
+                <button type="submit" class="px-8 py-3 font-bold rounded-lg text-lg transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 flex items-center justify-center gap-2 btn-primary">
+                    Update CV
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let experienceCount = {{ cv_data.experiences | length }};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const experienceContainer = document.getElementById('experience-fields-container');
+            const addExperienceBtn = document.getElementById('add-experience-btn');
+
+            const updateRemoveButtons = () => {
+                document.querySelectorAll('.remove-experience-btn').forEach(button => {
+                    button.onclick = (e) => {
+                        e.target.closest('.grid').remove();
+                        experienceCount--;
+                        if (experienceCount < 3) {
+                            addExperienceBtn.classList.remove('hidden');
+                        }
+                    };
+                });
+            };
+
+            const addExperienceField = (country = '', period = '') => {
+                if (experienceCount >= 3) {
+                    return; // Do not add more than 3 experiences
+                }
+                experienceCount++;
+
+                const container = document.createElement('div');
+                container.className = 'grid grid-cols-12 gap-2 items-center';
+                container.innerHTML = `
+                    <div class="col-span-6">
+                        <input type="text" name="experience_country" placeholder="Country" class="w-full px-3 py-2 text-sm input-style border rounded-md" value="${country}">
+                    </div>
+                    <div class="col-span-5">
+                        <input type="number" name="experience_period" placeholder="Years" class="w-full px-3 py-2 text-sm input-style border rounded-md" value="${period}">
+                    </div>
+                    <div class="col-span-1">
+                        <button type="button" class="remove-experience-btn p-1 text-gray-400 hover:text-red-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                `;
+                experienceContainer.appendChild(container);
+                updateRemoveButtons();
+
+                if (experienceCount >= 3) {
+                    addExperienceBtn.classList.add('hidden');
+                }
+            };
+
+            addExperienceBtn.addEventListener('click', () => addExperienceField());
+            updateRemoveButtons(); // Attach listeners to existing buttons on load
+
+            // Handle form submission for experiences
+            document.getElementById('editCvForm').addEventListener('submit', (e) => {
+                const experiences = [];
+                document.querySelectorAll('#experience-fields-container > div').forEach(row => {
+                    const country = row.querySelector('input[name="experience_country"]').value;
+                    const period = row.querySelector('input[name="experience_period"]').value;
+                    if (country && period) {
+                        experiences.push({ country, period });
+                    }
+                });
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'experiences';
+                hiddenInput.value = JSON.stringify(experiences);
+                e.target.appendChild(hiddenInput);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -100,8 +100,9 @@ const createFileInput = (name, label) => {
     const previewDiv = container.querySelector(`#preview-${name}`);
     // Adjust background position for different image types
     if (name === 'passport') {
-        previewDiv.style.backgroundSize = '180%';
-        previewDiv.style.backgroundPosition = 'left bottom';
+        previewDiv.style.backgroundSize = 'contain';
+        previewDiv.style.backgroundRepeat = 'no-repeat';
+        previewDiv.style.backgroundPosition = 'center';
     } else if (name === 'full_body') {
         previewDiv.style.backgroundPosition = 'top';
     } else { // 'face'
@@ -153,7 +154,7 @@ const handleFileChange = (e) => {
 /**
  * Adds a new experience field to the form, up to a maximum of 3.
  */
-const addExperience = () => {
+const addExperience = (experience = {}) => {
     if (experienceCount >= 3) {
         return; // Do not add more than 3 experiences
     }
@@ -167,10 +168,10 @@ const addExperience = () => {
     container.className = 'grid grid-cols-12 gap-2 items-center animate-fade-in';
     container.innerHTML = `
         <div class="col-span-6">
-             <input type="text" name="country" placeholder="Country" class="w-full px-3 py-2 text-sm input-style border rounded-md" required>
+             <input type="text" name="country" placeholder="Country" class="w-full px-3 py-2 text-sm input-style border rounded-md" value="${experience.country || ''}" required>
         </div>
         <div class="col-span-5">
-             <input type="number" name="period" placeholder="Years" class="w-full px-3 py-2 text-sm input-style border rounded-md" required>
+             <input type="number" name="period" placeholder="Years" class="w-full px-3 py-2 text-sm input-style border rounded-md" value="${experience.period || ''}" required>
         </div>
         <div class="col-span-1">
             <button type="button" data-remove-id="${id}" class="remove-experience-btn p-1 text-gray-400 hover:text-red-500 transition-colors">
@@ -205,29 +206,22 @@ const addExperience = () => {
  */
 const handleSubmit = async (e) => {
     e.preventDefault();
-    // Show loading indicator and hide form actions/errors
     dom.formActions.classList.add('hidden');
     dom.generatingIndicator.classList.remove('hidden');
     dom.errorContainer.classList.add('hidden');
 
     try {
-        const payload = new FormData();
-        
-        // Append image files to the form data
+        const payload = new FormData(dom.cvForm);
+
         if (formData.passport) payload.append('passport', formData.passport);
         if (formData.face) payload.append('face', formData.face);
         if (formData.full_body) payload.append('full_body', formData.full_body);
 
-        // Append text fields from the form
-        payload.append('contactPhone', dom.cvForm.contactPhone.value);
-        payload.append('religion', dom.cvForm.religion.value);
-
-        // Collect, stringify, and append experiences data
         const experiences = Array.from(dom.experienceContainer.children).map(row => ({
             country: row.querySelector('input[name="country"]').value,
             period: row.querySelector('input[name="period"]').value
         })).filter(exp => exp.country && exp.period);
-        payload.append('experiences', JSON.stringify(experiences));
+        payload.set('experiences', JSON.stringify(experiences));
 
         const response = await fetch('/generate', {
             method: 'POST',
@@ -235,25 +229,28 @@ const handleSubmit = async (e) => {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
-            throw new Error(errorData.message || 'An unknown backend error occurred.');
+            let errorMessage = `An unexpected error occurred (HTTP ${response.status}). Please try again.`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // Ignore if the response is not JSON
+            }
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
 
-        // Populate the result page with generated PDF and full name
-        populateResultPage(result.fullName, result.downloadUrl);
+        populateResultPage(result.fullName, result.downloadUrl, result.editUrl);
+        showPopupMessage("CV generated successfully!");
         
-        // Transition to result section
         dom.formSection.classList.add('hidden');
         dom.resultSection.classList.remove('hidden');
-        window.scrollTo(0, 0); // Scroll to top of the page
+        window.scrollTo(0, 0);
 
     } catch (error) {
-        dom.errorContainer.classList.remove('hidden');
-        dom.errorMessage.textContent = error.message;
+        showPopupMessage(error.message, true);
     } finally {
-        // Hide loading indicator and show form actions again
         dom.formActions.classList.remove('hidden');
         dom.generatingIndicator.classList.add('hidden');
     }
@@ -263,8 +260,9 @@ const handleSubmit = async (e) => {
  * Populates the result page with the generated CV preview and download link.
  * @param {string} fullName - The full name of the candidate.
  * @param {string} downloadUrl - The URL to download the generated PDF.
+ * @param {string} editUrl - The URL to edit the CV.
  */
-const populateResultPage = (fullName, downloadUrl) => {
+const populateResultPage = (fullName, downloadUrl, editUrl) => {
     const iframe = document.getElementById('pdf-preview-iframe');
     iframe.src = downloadUrl;
 
@@ -274,29 +272,44 @@ const populateResultPage = (fullName, downloadUrl) => {
         downloadBtn.download = `${fullName.replace(/ /g, '_')}_CV.pdf`;
         downloadBtn.classList.remove('hidden');
     }
+
+    if (editUrl) {
+        const editBtn = document.getElementById('edit-btn');
+        editBtn.href = editUrl;
+        editBtn.classList.remove('hidden');
+    }
 };
 
 /**
  * Resets the application form and state to allow generating a new CV.
  */
 const resetApp = () => {
-    formData = { passport: null, face: null, full_body: null };
-    experienceCount = 0;
-    
-    document.getElementById('cvForm').reset();
-    dom.experienceContainer.innerHTML = '';
+    window.location.href = '/clear_session';
+};
 
-    // Reset file input previews
-    document.querySelectorAll('input[type="file"]').forEach(input => {
-        handleFileChange({ target: input });
-    });
-    
-    // Hide result section and show form section
-    dom.resultSection.classList.add('hidden');
-    dom.formSection.classList.remove('hidden');
-    dom.errorContainer.classList.add('hidden');
-    
-    validateForm();
+const showPopupMessage = (message, isError = false) => {
+    const popup = document.getElementById('popup-message');
+    const popupText = document.getElementById('popup-text');
+    const closeBtn = document.getElementById('close-popup-btn');
+
+    popupText.textContent = message;
+    popup.className = `fixed top-5 right-5 px-6 py-3 rounded-lg shadow-lg transition-transform transform duration-300 ease-out ${isError ? 'bg-red-500' : 'bg-green-500'} text-white`;
+
+    popup.classList.remove('hidden', 'translate-x-full');
+    popup.classList.add('translate-x-0');
+
+    const hidePopup = () => {
+        popup.classList.remove('translate-x-0');
+        popup.classList.add('translate-x-full');
+        setTimeout(() => popup.classList.add('hidden'), 300);
+        popup.removeEventListener('click', hidePopup);
+        closeBtn.removeEventListener('click', hidePopup);
+    };
+
+    popup.addEventListener('click', hidePopup);
+    closeBtn.addEventListener('click', hidePopup);
+
+    setTimeout(hidePopup, 5000); // Hide after 5 seconds
 };
 
 // Initialize the application when the DOM is fully loaded
@@ -309,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn: document.getElementById('submit-btn'),
         restartBtn: document.getElementById('restart-btn'),
         backBtn: document.getElementById('back-btn'),
+        editBtn: document.getElementById('edit-btn'),
         addExperienceBtn: document.getElementById('add-experience-btn'),
         experienceContainer: document.getElementById('experience-fields-container'),
         experienceFieldset: document.getElementById('experience-fieldset'),
@@ -318,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessage: document.getElementById('error-message'),
         generatingIndicator: document.getElementById('generating-indicator'),
         formActions: document.getElementById('form-actions'),
+        extractionMethodInput: document.getElementById('extractionMethod'),
         result: {
             summary: document.getElementById('result-summary'),
             passportImage: document.getElementById('result-passportImage'),
@@ -330,7 +345,34 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('passport-container').appendChild(createFileInput('passport', 'Passport Photo *'));
     document.getElementById('face-container').appendChild(createFileInput('face', 'Face Photo *'));
     document.getElementById('full_body-container').appendChild(createFileInput('full_body', 'Full Body Photo *'));
-    
+
+    // Pre-populate image previews if cvData is available (e.g., after regeneration)
+    const initialCvData = JSON.parse(document.body.getAttribute('data-cv-data') || '{}');
+    if (initialCvData.passport_image_path) {
+        const passportPreview = document.getElementById('preview-passport');
+        const passportPlaceholder = document.getElementById('placeholder-passport');
+        passportPreview.style.backgroundImage = `url('${initialCvData.passport_image_path}')`;
+        passportPreview.classList.add('opacity-100');
+        passportPlaceholder.classList.add('opacity-0');
+        formData.passport = true; // Mark as present for validation
+    }
+    if (initialCvData.face_image_path) {
+        const facePreview = document.getElementById('preview-face');
+        const facePlaceholder = document.getElementById('placeholder-face');
+        facePreview.style.backgroundImage = `url('${initialCvData.face_image_path}')`;
+        facePreview.classList.add('opacity-100');
+        facePlaceholder.classList.add('opacity-0');
+        formData.face = true; // Mark as present for validation
+    }
+    if (initialCvData.full_body_image_path) {
+        const fullBodyPreview = document.getElementById('preview-full_body');
+        const fullBodyPlaceholder = document.getElementById('placeholder-full_body');
+        fullBodyPreview.style.backgroundImage = `url('${initialCvData.full_body_image_path}')`;
+        fullBodyPreview.classList.add('opacity-100');
+        fullBodyPlaceholder.classList.add('opacity-0');
+        formData.full_body = true; // Mark as present for validation
+    }
+
     // Load theme from localStorage on initialization, or apply default
     const savedThemeName = localStorage.getItem('selectedTheme');
     let initialTheme = THEMES[0]; // Default theme
@@ -349,8 +391,22 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.resultSection.classList.add('hidden');
         dom.formSection.classList.remove('hidden');
     });
-    dom.addExperienceBtn.addEventListener('click', addExperience);
+    dom.addExperienceBtn.addEventListener('click', () => addExperience());
 
     // Initial form validation check
     validateForm();
+
+    // Handle redirection from edit page
+    const bodyElement = document.body;
+    const cvDataAttr = bodyElement.getAttribute('data-cv-data');
+    const downloadUrlAttr = bodyElement.getAttribute('data-download-url');
+
+    if (cvDataAttr && downloadUrlAttr && downloadUrlAttr !== 'null') {
+        const cvData = JSON.parse(cvDataAttr);
+        const downloadUrl = JSON.parse(downloadUrlAttr);
+        populateResultPage(cvData.fullName, downloadUrl, "/edit");
+        dom.formSection.classList.add('hidden');
+        dom.resultSection.classList.remove('hidden');
+        window.scrollTo(0, 0);
+    }
 });
