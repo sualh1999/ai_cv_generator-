@@ -3,3 +3,5 @@ PyMuPDF
 Pillow
 google-generativeai
 python-dotenv
+opencv-python
+numpy
