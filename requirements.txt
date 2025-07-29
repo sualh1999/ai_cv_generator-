@@ -5,3 +5,6 @@ google-generativeai
 python-dotenv
 opencv-python
 numpy
+requests
+pytesseract
+imutils
